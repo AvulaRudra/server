@@ -1,0 +1,24 @@
+name: Deploy Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH and Docker Compose
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_WORK_DIR }}
+            git pull origin ${{ secrets.MAIN_BRANCH }}
+            docker compose pull
+            docker compose up --build -d
