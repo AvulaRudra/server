@@ -51,11 +51,11 @@ return projectMappings[normalized] || normalized;
 
 // Helper to normalize field names for consistent mapping
 function normalizeFieldName(fieldName) {
-  if (!fieldName) return '';
-  return fieldName.toString()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '')  // Remove all non-alphanumeric characters
-    .trim();
+if (!fieldName) return '';
+return fieldName.toString()
+.toLowerCase()
+.replace(/[^a-z0-9]/g, '')  // Remove all non-alphanumeric characters
+.trim();
 }
 
 // Helper to map only required columns for Google Sheet
@@ -78,27 +78,27 @@ workLocation: lead.workLocation || ''
 
 // Webhook verification endpoint
 router.get('/fb-webhook', (req, res) => {
-  // Parse the query params
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
+// Parse the query params
+const mode = req.query['hub.mode'];
+const token = req.query['hub.verify_token'];
+const challenge = req.query['hub.challenge'];
 
-  // Check if a token and mode were sent
-  if (mode && token) {
-    // Check the mode and token sent are correct
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      // Respond with 200 OK and challenge token from the request
-      console.log('✅ Webhook verified successfully');
-      return res.status(200).send(challenge);
-    } else {
-      // Responds with '403 Forbidden' if verify tokens do not match
-      console.error('❌ Verification failed. Tokens do not match.');
-      return res.sendStatus(403);
-    }
-  } else {
-    console.error('❌ Missing verify token or mode');
-    return res.sendStatus(400);
-  }
+// Check if a token and mode were sent
+if (mode && token) {
+// Check the mode and token sent are correct
+if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+// Respond with 200 OK and challenge token from the request
+console.log('✅ Webhook verified successfully');
+return res.status(200).send(challenge);
+} else {
+// Responds with '403 Forbidden' if verify tokens do not match
+console.error('❌ Verification failed. Tokens do not match.');
+return res.sendStatus(403);
+}
+} else {
+console.error('❌ Missing verify token or mode');
+return res.sendStatus(400);
+}
 });
 
 // Webhook POST endpoint
@@ -223,48 +223,48 @@ const fieldValue = f.values[0] || '';
 
 // Name field mapping
 if ((fieldName.includes('name') || fieldName.includes('full_name') || normalizedFieldName.includes('fullname')) && !lead.name) {
-  lead.name = fieldValue;
+lead.name = fieldValue;
 }
 
 // Email field mapping
 if ((fieldName.includes('email') || normalizedFieldName.includes('emailaddress')) && !lead.email) {
-  lead.email = fieldValue;
+lead.email = fieldValue;
 }
 
 // Phone field mapping
 if ((fieldName.includes('phone') || fieldName.includes('mobile') || normalizedFieldName.includes('phonenumber')) && !lead.phone) {
-  lead.phone = fieldValue;
+lead.phone = fieldValue;
 }
 
 // City/Location field mapping
 if ((fieldName.includes('city') || fieldName.includes('location')) && !lead.city) {
-  lead.city = fieldValue;
+lead.city = fieldValue;
 }
 
 // Size field mapping
 if ((fieldName.includes('size') || fieldName.includes('preferred') || normalizedFieldName.includes('yourpreferredsize')) && !lead.size) {
-  lead.size = fieldValue;
+lead.size = fieldValue;
 }
 
 // Budget field mapping
 if ((fieldName.includes('budget') || fieldName.includes('dropdown') || normalizedFieldName.includes('budgetdropdown') || normalizedFieldName.includes('budgetabove48cr')) && !lead.budget) {
-  lead.budget = fieldValue;
+lead.budget = fieldValue;
 }
 
 // Purpose field mapping
 if (fieldName.includes('purpose') && !lead.purpose) {
-  lead.purpose = fieldValue;
+lead.purpose = fieldValue;
 }
 
 // Priority field mapping
 if ((fieldName.includes('priority') || fieldName.includes('lifestyle') || fieldName.includes('connectivity') || fieldName.includes('amenities') || normalizedFieldName.includes('toppriority')) && !lead.priority) {
-  lead.priority = fieldValue;
+lead.priority = fieldValue;
 }
 
 // Work Location field mapping
 if ((fieldName.includes('work') && fieldName.includes('location')) || normalizedFieldName.includes('worklocation') && !lead.workLocation) {
 if (((fieldName.includes('work') && fieldName.includes('location')) || normalizedFieldName.includes('worklocation')) && !lead.workLocation) {
-  lead.workLocation = fieldValue;
+lead.workLocation = fieldValue;
 }
 }
 });
@@ -359,3 +359,54 @@ console.error('❌ Error stack:', err.stack);
 res.sendStatus(500);
 }
 });
+
+// Test endpoint to verify Google Sheets integration
+// router.post('/test-webhook', async (req, res) => {
+//   try {
+//     console.log('🧪 Test webhook hit');
+
+//     const testLead = {
+//       leadId: `TEST-${Date.now()}`,
+//       project: 'Test Project',
+//       source: 'Test Webhook',
+//       name: 'Test User',
+//       email: 'test@example.com',
+//       phone: '1234567890',
+//       city: 'Test City',
+//       message: 'This is a test lead from webhook',
+//       created_time: new Date().toISOString(),
+//       formId: 'TEST_FORM'
+//     };
+
+//     try {
+//       const success = await appendLeadToSheetSimple(testLead);
+//       if (success) {
+//         console.log('✅ Test lead added successfully');
+
+//         res.json({ 
+//           success: true, 
+//           message: 'Test lead added to Google Sheet',
+//           leadId: testLead.leadId 
+//         });
+//       } else {
+//         res.json({ 
+//           success: false, 
+//           message: 'Failed to add test lead to Google Sheet',
+//           leadId: testLead.leadId 
+//         });
+//       }
+//     } catch (err) {
+//       console.error('❌ Test webhook error:', err.message);
+//       res.status(500).json({ 
+//         success: false, 
+//         error: err.message 
+//       });
+//     }
+//   } catch (err) {
+//     console.error('❌ Test webhook error:', err.message);
+//     res.status(500).json({ 
+//       success: false, 
+//       error: err.message 
+//     });
+//   }
+// });
