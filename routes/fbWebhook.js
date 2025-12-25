@@ -263,11 +263,10 @@ if ((fieldName.includes('priority') || fieldName.includes('lifestyle') || fieldN
 
 // Work Location field mapping
 if ((fieldName.includes('work') && fieldName.includes('location')) || normalizedFieldName.includes('worklocation') && !lead.workLocation) {
-if (((fieldName.includes('work') && fieldName.includes('location')) || normalizedFieldName.includes('worklocation')) && !lead.workLocation) {
   lead.workLocation = fieldValue;
 }
 }
-}));
+});
 }
 
 // Add created_time from Facebook if available
@@ -359,3 +358,56 @@ console.error('❌ Error stack:', err.stack);
 res.sendStatus(500);
 }
 });
+
+// Test endpoint to verify Google Sheets integration
+// router.post('/test-webhook', async (req, res) => {
+//   try {
+//     console.log('🧪 Test webhook hit');
+
+//     const testLead = {
+//       leadId: `TEST-${Date.now()}`,
+//       project: 'Test Project',
+//       source: 'Test Webhook',
+//       name: 'Test User',
+//       email: 'test@example.com',
+//       phone: '1234567890',
+//       city: 'Test City',
+//       message: 'This is a test lead from webhook',
+//       created_time: new Date().toISOString(),
+//       formId: 'TEST_FORM'
+//     };
+
+//     try {
+//       const success = await appendLeadToSheetSimple(testLead);
+//       if (success) {
+//         console.log('✅ Test lead added successfully');
+
+//         res.json({ 
+//           success: true, 
+//           message: 'Test lead added to Google Sheet',
+//           leadId: testLead.leadId 
+//         });
+//       } else {
+//         res.json({ 
+//           success: false, 
+//           message: 'Failed to add test lead to Google Sheet',
+//           leadId: testLead.leadId 
+//         });
+//       }
+//     } catch (err) {
+//       console.error('❌ Test webhook error:', err.message);
+//       res.status(500).json({ 
+//         success: false, 
+//         error: err.message 
+//       });
+//     }
+//   } catch (err) {
+//     console.error('❌ Test webhook error:', err.message);
+//     res.status(500).json({ 
+//       success: false, 
+//       error: err.message 
+//     });
+//   }
+// });
+
+export default router;
