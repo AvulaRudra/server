@@ -1,80 +1,23 @@
-// import dotenv from 'dotenv';
-// dotenv.config(); // 🔐 Load .env variables before anything else
-
-// import express from 'express';  
-// import mongoose from 'mongoose';
-// import cors from 'cors';
-// import path from 'path';
-// import { fileURLToPath } from 'url';
-
-// // ✅ Import CJS-compatible routes
-// import leadRoutes from './routes/leadRoutes.js';
-// import pitchRoutes from './routes/pitchRoutes.js';
-// import pitchCorrectionsRoutes from './routes/pitchCorrectionsRoutes.js';
-// import pitchAdminRoutes from './routes/pitchAdminRoutes.js';
-// import mcubeRoutes from './routes/mcubeRoutes.js';
-// import fbWebhookRoutes from './routes/fbWebhook.js';
-// import twilioRoutes from './routes/twilioRoutes.js';
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
-// const app = express();
-
-// // ✅ Middleware
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: false })); // 👈 Required for Twilio webhook
-
-// app.use(cors());
-
-// // ✅ Static file serving (for mp3 playback)
-// app.use('/recordings', express.static(path.join(__dirname, 'recordings')));
-
-// // ✅ Register primary API routes
-// app.use('/api/leads', leadRoutes);
-// app.use('/api', pitchRoutes);
-// app.use('/api/pitch-corrections', pitchCorrectionsRoutes);
-// app.use('/api/admin', pitchAdminRoutes);
-// app.use('/api', mcubeRoutes);
-// app.use('/webhook', fbWebhookRoutes);
-// app.use('/api/twilio', twilioRoutes); // ✅ Twilio call flow routes
-
-// // ✅ Health Check
-// app.get('/', (req, res) => {
-//   res.send('🚀 CRM Backend is running successfully!');
-// });
-
-// // ✅ Connect to MongoDB and dynamically import ESM routes
-// mongoose.connect(process.env.MONGO_URI, {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-// })
-// .then(async () => {
-//   console.log('✅ Connected to MongoDB');
-
-//   // ✅ Dynamically load ESM call analysis route
-//   const { default: callAnalysisRoutes } = await import('./routes/callAnalysisRoutes.mjs');
-//   app.use('/api', callAnalysisRoutes); // includes /call-analysis & /test-insert-call
-
-//   const PORT = process.env.PORT || 5000;
-//   app.listen(PORT, () => {
-//     console.log(`🚀 Server is running on http://localhost:${PORT}`);
-//   });
-// })
-// .catch((err) => {
-//   console.error('❌ MongoDB connection error:', err);
-// });
-
-
-
 import dotenv from 'dotenv';
-dotenv.config(); // 🔐 Load .env variables
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import express from 'express';  
+// 🔐 Load .env variables
+// Initialize __filename and __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+// Debug: Log environment variables (be careful with sensitive data in production)
+console.log('Environment variables loaded:');
+console.log('MONGO_URI:', process.env.MONGO_URI ? '✅ Loaded' : '❌ Missing');
+console.log('MCUBE_API_KEY:', process.env.MCUBE_API_KEY ? '✅ Loaded' : '❌ Missing');
+
+import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import path from 'path'; // ✅ Corrected import: Use built-in Node.js path module
-import { fileURLToPath } from 'url';
 import adminStatsRoutes from './routes/adminStatsRoutes.js';
 
 // ✅ Import CJS-compatible routes
@@ -86,9 +29,6 @@ import mcubeRoutes from './routes/mcubeRoutes.js';
 import fbWebhookRoutes from './routes/fbWebhook.js';
 import magicbricksRoutes from './routes/magicbricksRoutes.js';
 // import twilioRoutes from './routes/twilioRoutes.js'; // ❌ Commented out: Replaced Twilio with MCUBE
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -114,7 +54,7 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // Allow all origins for development and production
     // You can restrict this to specific domains in production
     callback(null, true);
@@ -140,7 +80,7 @@ app.use('/api', pitchRoutes);
 // app.use('/api/pitch-corrections', pitchCorrectionsRoutes);
 // app.use('/api/admin', pitchAdminRoutes);
 app.use('/api', mcubeRoutes);
-app.use('/api', fbWebhookRoutes); // This includes /api/fb-webhook and /api/test-webhook
+app.use('/api', fbWebhookRoutes); // This includes /api/fb-webhook
 app.use('/api', magicbricksRoutes); // Register MagicBricks POST endpoint
 app.use('/api/admin', adminStatsRoutes);
 // app.use('/api/twilio', twilioRoutes); // ❌ Commented out: Replaced Twilio with MCUBE
@@ -173,7 +113,13 @@ app.get('/api/routes', (req, res) => {
   res.json({ routes });
 });
 
-// ✅ Connect to MongoDB and dynamically import ESM routes
+// ✅ FIX: Start server immediately (don’t block on MongoDB)
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+});
+
+// ✅ Connect to MongoDB and dynamically import ESM routes (non-blocking)
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -184,13 +130,8 @@ mongoose.connect(process.env.MONGO_URI, {
   // ✅ Dynamically load ESM call analysis route
   const { default: callAnalysisRoutes } = await import('./routes/callAnalysisRoutes.mjs');
   app.use('/api', callAnalysisRoutes); // includes /call-analysis & /test-insert-call
-
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  });
 })
 .catch((err) => {
   console.error('❌ MongoDB connection error:', err);
-  process.exit(1);
+  // ❗ Do NOT exit the process — keep server alive for webhook verification
 });
