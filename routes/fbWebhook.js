@@ -358,4 +358,4 @@ console.error('❌ Webhook error:', err.message);
 console.error('❌ Error stack:', err.stack);
 res.sendStatus(500);
 }
-});
+}));
