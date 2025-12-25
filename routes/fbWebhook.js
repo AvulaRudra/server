@@ -4,6 +4,8 @@ import { appendLeadToSheet } from '../services/googleSheetsService.js';
 
 const router = express.Router();
 
+const VERIFY_TOKEN = 'titan_verify';
+const PAGE_ACCESS_TOKEN = 'EAATT84b6A0MBOZC5eivZAYnEjkWfZAqxzZCiFacZCNnZCFPLM07ASuRhcw8olsZCx8K1ColBEZBuYH6fTNCPcGSpFx632M7qtCxE3YEphs34ic4ZAc7fqs1CgOUMfehwjAq2qonBU1mfeBKnqUwpVkZBA5KCg4tP8sknOufz1lDBCvANQZBQRrUEn122BqumkfUXU3sUC8u';
 const VERIFY_TOKEN = 'goyalco_verify';
 const PAGE_ACCESS_TOKEN = 'EAATT84b6A0MBPU8UxXAKMHauyhK17X9tUINdjaNqg9N9WCs7vMWlVUwjxmtb8bVmPbQ2KTw8vFhroQB0vQIrLAmZB6ubxSau7PNGemgCwGhauUIqFnD9kz2e9Nl0QIVm262ju85jC0nVJqOIwTtJcp2WuVXY9DsCteUu9ZCAo5erE0Cc66php2n8JRWH80csbBQCgs';
 
@@ -49,15 +51,6 @@ const projectMappings = {
 return projectMappings[normalized] || normalized;
 }
 
-// Helper to normalize field names for consistent mapping
-function normalizeFieldName(fieldName) {
-if (!fieldName) return '';
-return fieldName.toString()
-.toLowerCase()
-.replace(/[^a-z0-9]/g, '')  // Remove all non-alphanumeric characters
-.trim();
-}
-
 // Helper to map only required columns for Google Sheet
 function mapLeadToSheetColumns(lead) {
 return {
@@ -67,47 +60,14 @@ source: lead.source || '',
 name: lead.name || '',
 email: lead.email || '',
 phone: lead.phone || '',
-city: lead.city || '',
-size: lead.size || '',
-budget: lead.budget || '',
-purpose: lead.purpose || '',
-priority: lead.priority || '',
-workLocation: lead.workLocation || ''
+city: lead.city || ''
 };
 }
 
-// Webhook verification endpoint
-router.get('/fb-webhook', (req, res) => {
-// Parse the query params
-const mode = req.query['hub.mode'];
-const token = req.query['hub.verify_token'];
-const challenge = req.query['hub.challenge'];
-
-// Check if a token and mode were sent
-if (mode && token) {
-// Check the mode and token sent are correct
-if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-// Respond with 200 OK and challenge token from the request
-console.log('✅ Webhook verified successfully');
-return res.status(200).send(challenge);
-} else {
-// Responds with '403 Forbidden' if verify tokens do not match
-console.error('❌ Verification failed. Tokens do not match.');
-return res.sendStatus(403);
-}
-} else {
-console.error('❌ Missing verify token or mode');
-return res.sendStatus(400);
-}
-});
-
-// Webhook POST endpoint
 router.post('/fb-webhook', async (req, res) => {
 try {
 console.log('📨 Webhook POST hit');
 console.log('📦 Raw Body:', JSON.stringify(req.body, null, 2));
-console.log('🔍 Raw form ID from webhook (raw):', req.body?.entry?.[0]?.changes?.[0]?.value?.form_id);
-console.log('🔍 Raw form ID type:', typeof req.body?.entry?.[0]?.changes?.[0]?.value?.form_id);
 console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
 console.log('🔍 Body type:', typeof req.body);
 console.log('🔍 Body keys:', Object.keys(req.body || {}));
@@ -125,66 +85,21 @@ const leadId = change.value.leadgen_id;
 const formId = change.value.form_id;
 const pageId = change.value.page_id;
 
-console.log('🔍 Form ID from webhook:', formId);
-console.log('🔍 Known project mappings:', JSON.stringify({
-'2394313481022296': 'Orchid Salisbury',
-'1672153646791838': 'Orchid Platinum',
-'2808675605994341': 'Orchid Bloomsberry',
-'756944660385195': 'Orchid Life',
-'775382491742653': 'Riviera Uno'
-}, null, 2));
-
 console.log('📥 New Lead ID:', leadId);
 console.log('📝 Form ID:', formId);
 console.log('📄 Page ID:', pageId);
 
 // Fix the project mapping (remove extra space)
 const getProjectName = (formId) => {
-// Convert formId to string to ensure consistent type comparison
-const formIdStr = String(formId).trim();
-
 const projectMap = {
-'2394313481022296': 'Orchid Salisbury',
-'1672153646791838': 'Orchid Platinum',
-'2808675605994341': 'Orchid Bloomsberry',
-'756944660385195': 'Orchid Life',
-'775382491742653': 'Riviera Uno',
-// Add new form ID mappings here as needed
-// Format: 'FORM_ID': 'Project Name'
+'376840518773731': 'Orchid Salisbury',
+'793235552669212': 'Orchid Platinum',
+'758750669703946': 'Orchid Life',
+'836984054637126': 'Orchid Bloomsberry',
+'655063727089499': 'Riviera Uno', // Removed extra space
+// Add more mappings as needed
 };
-
-// Debug: Check for direct match and partial matches
-const debugInfo = {
-receivedFormId: formId,
-normalizedFormId: formIdStr,
-typeOfFormId: typeof formId,
-availableFormIds: Object.keys(projectMap),
-exactMatch: projectMap[formIdStr] ? 'Yes' : 'No',
-matchedProject: projectMap[formIdStr] || 'None'
-};
-
-// Check for exact match first
-if (projectMap[formIdStr]) {
-console.log('✅ Exact match found for form ID:', debugInfo);
-return projectMap[formIdStr];
-}
-
-// If no exact match, check for partial matches (in case of extra characters)
-const matchedKey = Object.keys(projectMap).find(key => 
-formIdStr.includes(key) || key.includes(formIdStr)
-);
-
-if (matchedKey) {
-console.log('🔍 Partial match found for form ID:', {
-...debugInfo,
-matchedKey,
-project: projectMap[matchedKey]
-});
-return projectMap[matchedKey];
-}
-
-console.log('❌ No match found for form ID:', debugInfo);
-return 'Facebook Lead Form';
+return projectMap[formId] || 'Facebook Lead Form';
 };
 
 let lead = {
@@ -216,55 +131,19 @@ if (f.name && Array.isArray(f.values)) {
 // Store the field value
 lead[f.name] = f.values[0] || '';
 
-// Enhanced field mapping with comprehensive aliases and normalization
+// Also store with common variations for better mapping
 const fieldName = f.name.toLowerCase();
-const normalizedFieldName = normalizeFieldName(f.name);
-const fieldValue = f.values[0] || '';
-
-// Name field mapping
-if ((fieldName.includes('name') || fieldName.includes('full_name') || normalizedFieldName.includes('fullname')) && !lead.name) {
-lead.name = fieldValue;
+if (fieldName.includes('name') && !lead.name) {
+lead.name = f.values[0] || '';
 }
-
-// Email field mapping
-if ((fieldName.includes('email') || normalizedFieldName.includes('emailaddress')) && !lead.email) {
-lead.email = fieldValue;
+if (fieldName.includes('email') && !lead.email) {
+lead.email = f.values[0] || '';
 }
-
-// Phone field mapping
-if ((fieldName.includes('phone') || fieldName.includes('mobile') || normalizedFieldName.includes('phonenumber')) && !lead.phone) {
-lead.phone = fieldValue;
+if (fieldName.includes('phone') && !lead.phone) {
+lead.phone = f.values[0] || '';
 }
-
-// City/Location field mapping
-if ((fieldName.includes('city') || fieldName.includes('location')) && !lead.city) {
-lead.city = fieldValue;
-}
-
-// Size field mapping
-if ((fieldName.includes('size') || fieldName.includes('preferred') || normalizedFieldName.includes('yourpreferredsize')) && !lead.size) {
-lead.size = fieldValue;
-}
-
-// Budget field mapping
-if ((fieldName.includes('budget') || fieldName.includes('dropdown') || normalizedFieldName.includes('budgetdropdown') || normalizedFieldName.includes('budgetabove48cr')) && !lead.budget) {
-lead.budget = fieldValue;
-}
-
-// Purpose field mapping
-if (fieldName.includes('purpose') && !lead.purpose) {
-lead.purpose = fieldValue;
-}
-
-// Priority field mapping
-if ((fieldName.includes('priority') || fieldName.includes('lifestyle') || fieldName.includes('connectivity') || fieldName.includes('amenities') || normalizedFieldName.includes('toppriority')) && !lead.priority) {
-lead.priority = fieldValue;
-}
-
-// Work Location field mapping
-if ((fieldName.includes('work') && fieldName.includes('location')) || normalizedFieldName.includes('worklocation') && !lead.workLocation) {
-if (((fieldName.includes('work') && fieldName.includes('location')) || normalizedFieldName.includes('worklocation')) && !lead.workLocation) {
-lead.workLocation = fieldValue;
+if (fieldName.includes('city') || fieldName.includes('location') && !lead.city) {
+lead.city = f.values[0] || '';
 }
 }
 });
@@ -325,15 +204,10 @@ const lead = {
 leadId: req.body.leadId || req.body.id || `LEAD-${Date.now()}`,
 project: normalizeProjectName(getProjectName(req.body.formId)),
 source: req.body.source || 'Webhook',
-name: req.body.name || req.body.full_name || req.body['Full name'] || '',
-email: req.body.email || req.body.email_address || req.body['Email address'] || req.body['Email'] || '',
-phone: req.body.phone || req.body.phone_number || req.body['Phone number'] || '',
+name: req.body.name || req.body.full_name || '',
+email: req.body.email || req.body.email_address || '',
+phone: req.body.phone || req.body.phone_number || '',
 city: req.body.city || req.body.location || '',
-size: req.body.size || req.body['Your preferred size?'] || req.body.preferred_size || '',
-budget: req.body.budget || req.body['Budget Dropdown'] || req.body['Budget (Above 4.8Cr)'] || req.body.budget_dropdown || '',
-purpose: req.body.purpose || req.body['Purpose'] || '',
-priority: req.body.priority || req.body['Top Priority ( Lifestyle / Connectivity / Amenities etc)'] || req.body.top_priority || '',
-workLocation: req.body.workLocation || req.body['Work Location'] || req.body.work_location || '',
 created_time: new Date().toISOString(),
 formId: req.body.formId || '',
 ...req.body // Include all other fields
@@ -410,3 +284,5 @@ res.sendStatus(500);
 //     });
 //   }
 // });
+
+export default router;
