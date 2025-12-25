@@ -267,7 +267,7 @@ if (((fieldName.includes('work') && fieldName.includes('location')) || normalize
   lead.workLocation = fieldValue;
 }
 }
-});
+}));
 }
 
 // Add created_time from Facebook if available
@@ -358,4 +358,4 @@ console.error('❌ Webhook error:', err.message);
 console.error('❌ Error stack:', err.stack);
 res.sendStatus(500);
 }
-}));
+});
